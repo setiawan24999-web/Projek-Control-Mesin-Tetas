@@ -1,12 +1,32 @@
 #include <Arduino.h>
+#include <WiFi.h> 
 
-void setup () {
+// identitas WiFi
+const char* ssid = "Wokwi-GUEST";
+const char* password = "";
+
+void setup()
+{
   Serial.begin(115200);
-  Serial.println("ESP 32 Start");
-  delay(1000);
+  // mulai proses koneksi
+  WiFi.begin(ssid, password);
+  Serial.print("Menghubungkan WIFi");
+  
+  // ulangi selama belum terhubung 
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("WiFi terhubung");
+  Serial.print("Alamat IP: ");
+  Serial.println(WiFi.localIP());
+
 }
-void loop () {
-  Serial.println("Status: ");
-  Serial.print("ESP32 active");
+void loop()
+{
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Gagal terkoneksi");
+    WiFi.reconnect();
+  }
   delay(1000);
 }
