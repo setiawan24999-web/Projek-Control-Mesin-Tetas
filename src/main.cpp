@@ -1,32 +1,62 @@
 #include <Arduino.h>
-#include <WiFi.h> 
+#include <WiFi.h>
+#include <PubSubClient.h>
 
-// identitas WiFi
-const char* ssid = "Wokwi-GUEST";
-const char* password = "";
+const char *ssid = "Wokwi-GUEST";
+const char *password = "";
+const char *mqtt_server = "broker.hivemq.com";
+const char *topic = "mesin/tetas";
+
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+void connect_WiFi()
+{
+  WiFi.begin(ssid, password) ;
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("WIfi berhasil terhubung");
+}
+
+void connect_mqtt()
+{
+  while (!client.connected())
+  {
+    Serial.print("menghubungkan ke mqtt server");
+    if (client.connect("ESP32_MesinTetas"))
+    {
+      Serial.println("berhasil terhubung");
+    }
+    else
+    {
+      Serial.print("Gagal, rc= ");
+      Serial.print(client.state());
+      Serial.println("coba lagi beberapa detik");
+      delay(5000);
+    }
+  }
+}
 
 void setup()
 {
   Serial.begin(115200);
-  // mulai proses koneksi
-  WiFi.begin(ssid, password);
-  Serial.print("Menghubungkan WIFi");
-  
-  // ulangi selama belum terhubung 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("WiFi terhubung");
-  Serial.print("Alamat IP: ");
-  Serial.println(WiFi.localIP());
-
+  connect_WiFi();
+  client.setServer(mqtt_server, 1883);
 }
-void loop()
-{
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Gagal terkoneksi");
-    WiFi.reconnect();
+
+void loop () {
+  if (!client.connected()) {
+    connect_mqtt();
   }
-  delay(1000);
+  client.loop();;
+  int suhu = 20 ;
+  String data = "ini adalah suhu mesin tetas : " + String(suhu);
+  client.publish(topic, data.c_str());
+  Serial.print("test: ");
+  Serial.println(" data berhasil terkirim");
+ delay(1000);
 }
